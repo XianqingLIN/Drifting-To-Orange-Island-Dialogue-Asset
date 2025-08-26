@@ -1,23 +1,8 @@
 {
-  "code": 99991672,
-  "msg": "Access denied. One of the following scopes is required: [bitable:app:readonly, bitable:app, base:record:retrieve].应用尚未开通所需的应用身份权限：[bitable:app:readonly, bitable:app, base:record:retrieve]，点击链接申请并开通任一权限即可：https://open.feishu.cn/app/cli_a827debc897f101c/auth?q=bitable:app:readonly,bitable:app,base:record:retrieve&op_from=openapi&token_type=tenant",
-  "error": {
-    "message": "Refer to the documentation to fix the error: https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-fix-the-99991672-error",
-    "log_id": "20250826192632D6CBD1957F04E0514EA7",
-    "troubleshooter": "排查建议查看(Troubleshooting suggestions): https://open.feishu.cn/search?from=openapi&log_id=20250826192632D6CBD1957F04E0514EA7&code=99991672&method_id=6965347212289540098",
-    "permission_violations": [
-      {
-        "type": "action_scope_required",
-        "subject": "bitable:app:readonly"
-      },
-      {
-        "type": "action_scope_required",
-        "subject": "bitable:app"
-      },
-      {
-        "type": "action_scope_required",
-        "subject": "base:record:retrieve"
-      }
-    ]
-  }
+  "code": 0,
+  "data": {
+    "has_more": false,
+    "total": 0
+  },
+  "msg": "success"
 }
