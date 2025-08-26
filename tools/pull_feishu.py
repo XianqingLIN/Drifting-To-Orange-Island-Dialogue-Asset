@@ -12,6 +12,8 @@ token_url = "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/intern
 token_res = requests.post(token_url, json={"app_id": APP_ID, "app_secret": APP_SECRET})
 
 print("status:", token_res.status_code)
+print("APP_ID:", repr(APP_ID))
+print("APP_SECRET:", repr(APP_SECRET))
 print("body:", token_res.text) 
 
 token = token_res.json()["tenant_access_token"]
