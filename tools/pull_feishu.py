@@ -7,9 +7,6 @@ APP_SECRET = os.getenv("FEISHU_APP_SECRET")
 APP_TOKEN  = os.getenv("FEISHU_APP_TOKEN")
 TABLE_ID   = os.getenv("FEISHU_TABLE_ID")
 
-print("APP_TOKEN: ", APP_TOKEN)
-print("TABLE_ID: ", TABLE_ID)
-
 # 1. 换 token
 token_url = "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal"
 token_res = requests.post(token_url, json={"app_id": APP_ID, "app_secret": APP_SECRET})
