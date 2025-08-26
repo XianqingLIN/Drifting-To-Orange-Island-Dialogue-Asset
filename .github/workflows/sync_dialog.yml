@@ -33,7 +33,10 @@ jobs:
       - name: Install dependencies
         run: pip install requests
 
-      # 3. 拉取飞书数据
+      # 3. 先把远端最新代码拉下来
+      - run: git pull --rebase origin main
+
+      # 4. 拉取飞书数据
       - name: Pull data from Feishu
         env:
           FEISHU_APP_ID: ${{ secrets.FEISHU_APP_ID }}
@@ -42,10 +45,9 @@ jobs:
           FEISHU_TABLE_ID: ${{ secrets.FEISHU_TABLE_ID }}
         run: python tools/pull_feishu.py
 
-      # 4. 官方动作：add / commit / push（自动 rebase）
+      # 5. 官方动作：add / commit / push（自动 rebase）
       - name: Commit & push
         uses: EndBug/add-and-commit@v9
         with:
           add: 'feishu_data.json'
           message: 'Auto sync from Feishu table'
-          pull: '--rebase'
