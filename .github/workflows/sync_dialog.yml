@@ -34,7 +34,7 @@ jobs:
         FEISHU_APP_SECRET: ${{ secrets.FEISHU_APP_SECRET }}
         FEISHU_APP_TOKEN: ${{ secrets.FEISHU_APP_TOKEN }}
         FEISHU_TABLE_ID: ${{ secrets.FEISHU_TABLE_ID }}
-      run: python scripts/pull_feishu.py
+      run: python tools/pull_feishu.py
 
     - name: Commit & push
       run: |
