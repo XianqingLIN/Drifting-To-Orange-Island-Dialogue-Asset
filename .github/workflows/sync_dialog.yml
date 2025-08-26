@@ -17,30 +17,34 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v4
+      # 1. 拉取仓库（带完整历史，避免冲突）
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
+      # 2. 安装 Python 与依赖
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
-    - name: Install deps
-      run: pip install requests
+      - name: Install dependencies
+        run: pip install requests
 
-    - name: Pull data from Feishu
-      env:
-        FEISHU_APP_ID: ${{ secrets.FEISHU_APP_ID }}
-        FEISHU_APP_SECRET: ${{ secrets.FEISHU_APP_SECRET }}
-        FEISHU_APP_TOKEN: ${{ secrets.FEISHU_APP_TOKEN }}
-        FEISHU_TABLE_ID: ${{ secrets.FEISHU_TABLE_ID }}
-      run: python tools/pull_feishu.py
+      # 3. 拉取飞书数据
+      - name: Pull data from Feishu
+        env:
+          FEISHU_APP_ID: ${{ secrets.FEISHU_APP_ID }}
+          FEISHU_APP_SECRET: ${{ secrets.FEISHU_APP_SECRET }}
+          FEISHU_APP_TOKEN: ${{ secrets.FEISHU_APP_TOKEN }}
+          FEISHU_TABLE_ID: ${{ secrets.FEISHU_TABLE_ID }}
+        run: python scripts/pull_feishu.py
 
-    - name: Commit & push
-      run: |
-        git config user.name "github-actions[bot]"
-        git config user.email "github-actions[bot]@users.noreply.github.com"
-        git pull --rebase origin main        # 1. 先同步远程最新
-        git add feishu_data.json
-        git diff --cached --quiet || git commit -m "Auto sync from Feishu table"
-        git push                             # 2. 再推送
+      # 4. 官方动作：add / commit / push（自动 rebase）
+      - name: Commit & push
+        uses: EndBug/add-and-commit@v9
+        with:
+          add: 'feishu_data.json'
+          message: 'Auto sync from Feishu table'
