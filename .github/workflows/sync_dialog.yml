@@ -1,0 +1,18 @@
+name: Sync Dialog
+on:
+  repository_dispatch:
+    types: [dialog_updated]
+jobs:
+  pull-sheet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: pip install openpyxl requests pyyaml
+      - run: python tools/pull_feishu.py  # 拉取 → 校验 → 导出
+      - run: |
+          git config user.name "bot"
+          git config user.email "bot@example.com"
+          git add .
+          git diff --cached --quiet || (git commit -m "sync dialog" && git push)
