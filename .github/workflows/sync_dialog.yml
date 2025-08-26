@@ -48,3 +48,4 @@ jobs:
         with:
           add: 'feishu_data.json'
           message: 'Auto sync from Feishu table'
+          pull: '--rebase'
