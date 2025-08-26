@@ -1,52 +1,45 @@
 import os, json, requests
 
-# 环境变量
 APP_ID     = os.getenv("FEISHU_APP_ID")
 APP_SECRET = os.getenv("FEISHU_APP_SECRET")
 APP_TOKEN  = os.getenv("FEISHU_APP_TOKEN")
-OUT_DIR    = "feishu_tables"            # 输出根目录
+BASE_DIR   = "feishu_tables"
 
-# 0. 换取 token
-token_url = "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal"
-token = requests.post(token_url, json={"app_id": APP_ID, "app_secret": APP_SECRET}).json()["tenant_access_token"]
-
+# 1. token
+token = requests.post(
+    "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal",
+    json={"app_id": APP_ID, "app_secret": APP_SECRET}
+).json()["tenant_access_token"]
 headers = {"Authorization": f"Bearer {token}"}
 
-# 1. 列出所有 table
+# 2. 所有 table
 tables = requests.get(
     f"https://open.feishu.cn/open-apis/bitable/v1/apps/{APP_TOKEN}/tables",
     headers=headers
 ).json()["data"]["items"]
 
-os.makedirs(OUT_DIR, exist_ok=True)
+os.makedirs(BASE_DIR, exist_ok=True)
 
-# 2. 遍历 table → 遍历 view → 拉取并保存
+# 3. 根据前缀拆分目录
 for tbl in tables:
-    table_id   = tbl["table_id"]
-    table_name = tbl["name"]
+    table_id, table_name = tbl["table_id"], tbl["name"]
 
-    # 2.1 列出该 table 的所有视图
-    views = requests.get(
-        f"https://open.feishu.cn/open-apis/bitable/v1/apps/{APP_TOKEN}/tables/{table_id}/views",
-        headers=headers
-    ).json()["data"]["items"]
+    if "_" in table_name:
+        prefix, name = table_name.split("_", 1)
+    else:
+        prefix, name = "uncategorized", table_name
 
-    # 2.2 遍历视图
-    for vw in views:
-        view_id   = vw["view_id"]
-        view_name = vw["name"]
+    out_dir = os.path.join(BASE_DIR, prefix)
+    os.makedirs(out_dir, exist_ok=True)
 
-        # 拉取该视图下的记录
-        records = requests.get(
-            f"https://open.feishu.cn/open-apis/bitable/v1/apps/{APP_TOKEN}/tables/{table_id}/records",
-            headers=headers,
-            params={"view_id": view_id, "page_size": 500}
-        ).json()
+    # 拉数据
+    records = requests.get(
+        f"https://open.feishu.cn/open-apis/bitable/v1/apps/{APP_TOKEN}/tables/{table_id}/records",
+        headers=headers,
+        params={"page_size": 500}
+    ).json()
 
-        # 保存
-        safe_name = f"{table_name}__{view_name}".replace("/", "_")
-        file_path = os.path.join(OUT_DIR, f"{safe_name}.json")
-        with open(file_path, "w", encoding="utf-8") as f:
-            json.dump(records, f, ensure_ascii=False, indent=2)
-
-        print(f"✅ {file_path} ({len(records['data']['items'])} rows)")
+    file_path = os.path.join(out_dir, f"{name}.json")
+    with open(file_path, "w", encoding="utf-8") as f:
+        json.dump(records, f, ensure_ascii=False, indent=2)
+    print(f"✅ {file_path}")
