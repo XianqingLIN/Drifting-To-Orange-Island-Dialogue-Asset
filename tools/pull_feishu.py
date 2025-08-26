@@ -1,18 +1,24 @@
-import os, requests, yaml, json
-APP_ID     = os.getenv('FEISHU_APP_ID')
-APP_SECRET = os.getenv('FEISHU_APP_SECRET')
-TABLE_ID   = os.getenv('FEISHU_TABLE_ID')
+import os
+import json
+import requests
 
-# 1. 获取 tenant_access_token
-token = requests.post(
-    'https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal',
-    json={'app_id': APP_ID, 'app_secret': APP_SECRET}
-).json()['tenant_access_token']
+APP_ID     = os.getenv("FEISHU_APP_ID")
+APP_SECRET = os.getenv("FEISHU_APP_SECRET")
+APP_TOKEN  = os.getenv("FEISHU_APP_TOKEN")
+TABLE_ID   = os.getenv("FEISHU_TABLE_ID")
 
-# 2. 取整张表
-url = f'https://open.feishu.cn/open-apis/sheets/v2/spreadsheets/{TABLE_ID}/values/dialog!A1:Z1000'
-data = requests.get(url, headers={'Authorization': f'Bearer {token}'}).json()
-records = data['data']['valueRange']['values'][1:]  # 跳过表头
+# 1. 换 token
+token_url = "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal"
+token_res = requests.post(token_url, json={"app_id": APP_ID, "app_secret": APP_SECRET})
+token = token_res.json()["tenant_access_token"]
 
-# 3. 校验 schema & 导出 .json / .bytes …
-...
+# 2. 拉表格数据
+records_url = f"https://open.feishu.cn/open-apis/bitable/v1/apps/{APP_TOKEN}/tables/{TABLE_ID}/records"
+headers = {"Authorization": f"Bearer {token}"}
+records = requests.get(records_url, headers=headers).json()
+
+# 3. 保存 JSON
+with open("feishu_data.json", "w", encoding="utf-8") as f:
+    json.dump(records, f, ensure_ascii=False, indent=2)
+
+print("✅ Feishu data saved to feishu_data.json")
