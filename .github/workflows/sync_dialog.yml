@@ -40,7 +40,7 @@ jobs:
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
-        git pull --rebase origin main   # 关键：先拉取合并远程变更
-        git add .
+        git pull --rebase origin main        # 1. 先同步远程最新
+        git add feishu_data.json
         git diff --cached --quiet || git commit -m "Auto sync from Feishu table"
-        git push
+        git push                             # 2. 再推送
