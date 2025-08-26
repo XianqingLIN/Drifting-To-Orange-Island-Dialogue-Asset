@@ -1,18 +1,45 @@
-name: Sync Dialog
+name: Sync Feishu Table to GitHub
+
 on:
+  # 每天凌晨 3 点自动跑一次（可选）
+  schedule:
+    - cron: '0 3 * * *'
+
+  # 手动触发
+  workflow_dispatch:
+
+  # 飞书 Webhook 触发（repository_dispatch）
   repository_dispatch:
-    types: [dialog_updated]
+    types: [feishu_update]
+
 jobs:
-  pull-sheet:
+  sync:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: {python-version: '3.11'}
-      - run: pip install openpyxl requests pyyaml
-      - run: python tools/pull_feishu.py  # 拉取 → 校验 → 导出
-      - run: |
-          git config user.name "bot"
-          git config user.email "bot@example.com"
-          git add .
-          git diff --cached --quiet || (git commit -m "sync dialog" && git push)
+    - name: Checkout repo
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install deps
+      run: pip install requests
+
+    - name: Pull data from Feishu
+      env:
+        FEISHU_APP_ID: ${{ secrets.FEISHU_APP_ID }}
+        FEISHU_APP_SECRET: ${{ secrets.FEISHU_APP_SECRET }}
+        FEISHU_APP_TOKEN: ${{ secrets.FEISHU_APP_TOKEN }}
+        FEISHU_TABLE_ID: ${{ secrets.FEISHU_TABLE_ID }}
+      run: python scripts/pull_feishu.py
+
+    - name: Commit & push
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add .
+        git diff --quiet && git diff --staged --quiet || git commit -m "Auto sync from Feishu table"
+        git push
