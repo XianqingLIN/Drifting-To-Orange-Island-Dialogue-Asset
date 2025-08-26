@@ -49,5 +49,5 @@ jobs:
       - name: Commit & push
         uses: EndBug/add-and-commit@v9
         with:
-          add: 'feishu_data.json'
-          message: 'Auto sync from Feishu table'
+          add: 'feishu_tables/*'
+          message: 'Auto sync all tables & views'
