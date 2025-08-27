@@ -24,10 +24,10 @@ os.makedirs(BASE_DIR, exist_ok=True)
 for tbl in tables:
     table_id, table_name = tbl["table_id"], tbl["name"]
 
-    if "_" in table_name:
-        prefix, name = table_name.split("_", 1)
+    if "__" in table_name:
+        prefix = table_name.split("__", 1)[0]
     else:
-        prefix, name = "uncategorized", table_name
+        prefix = "uncategorized"
 
     out_dir = os.path.join(BASE_DIR, prefix)
     os.makedirs(out_dir, exist_ok=True)
@@ -39,7 +39,7 @@ for tbl in tables:
         params={"page_size": 500}
     ).json()
 
-    file_path = os.path.join(out_dir, f"{name}.json")
+    file_path = os.path.join(out_dir, f"{table_name}.json")
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(records, f, ensure_ascii=False, indent=2)
     print(f"✅ {file_path}")
