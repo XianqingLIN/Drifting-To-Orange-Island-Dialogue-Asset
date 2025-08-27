@@ -31,7 +31,9 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install requests
+        run: |
+          pip install flatbuffers
+          pip install requests
 
       # 3. 先把远端最新代码拉下来
       - run: git pull --rebase origin main
@@ -44,8 +46,13 @@ jobs:
           FEISHU_APP_TOKEN: ${{ secrets.FEISHU_APP_TOKEN }}
           FEISHU_TABLE_ID: ${{ secrets.FEISHU_TABLE_ID }}
         run: python tools/pull_feishu.py
+        
+      # 5. 转换json数据
+      - name: Export data to Fungus format
+        run: |
+          python tools/export_dialog.py
 
-      # 5. 官方动作：add / commit / push（自动 rebase）
+      # 6. 官方动作：add / commit / push（自动 rebase）
       - name: Commit & push
         uses: EndBug/add-and-commit@v9
         with:
