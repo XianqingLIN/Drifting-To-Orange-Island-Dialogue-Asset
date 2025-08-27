@@ -24,8 +24,8 @@ os.makedirs(BASE_DIR, exist_ok=True)
 for tbl in tables:
     table_id, table_name = tbl["table_id"], tbl["name"]
 
-    if "__" in table_name:
-        prefix = table_name.split("__", 1)[0]
+    if "_" in table_name:
+        prefix = table_name.split("_", 1)[0]
     else:
         prefix = "uncategorized"
 
