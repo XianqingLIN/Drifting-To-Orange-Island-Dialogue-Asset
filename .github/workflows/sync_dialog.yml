@@ -35,16 +35,6 @@ jobs:
           pip install flatbuffers
           pip install requests
 
-      - name: Install flatc
-        run: |
-          curl -L https://github.com/google/flatbuffers/releases/download/v23.5.26/Linux.flatc.binary.g++-10.zip -o flatc.zip
-          unzip flatc.zip && chmod +x flatc && sudo mv flatc /usr/local/bin/
-
-      - name: Generate flatbuffers Python bindings
-        run: |
-          flatc --python tools/dialog.fbs  # 生成 Dialog/*.py 供 export_dialog.py import
-          # 如果 C# 也要用，可再跑 flatc --csharp dialog.fbs
-
       # 先把远端最新代码拉下来
       - run: git pull --rebase origin main
 
