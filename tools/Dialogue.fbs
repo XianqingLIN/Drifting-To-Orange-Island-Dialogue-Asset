@@ -1,23 +1,19 @@
-namespace Dialog;
+namespace Dialogue;
 
-table Option {
-  text_id   :uint32;   // 在字符串池里的索引
-  target_idx:int32;    // 目标节点索引，-1 = 关闭 UI
-  cond_len  :ushort;   // 条件字节码长度
-  cond_blob :[ubyte];  // 条件字节码
-  evt_len   :ushort;
-  evt_blob  :[ubyte];  // 事件字节码
+// 一条命令（等价于 Fungus 的一个 Command）
+table Command {
+  command_type:string;   // "Say", "If", "Menu", ...
+  parameters:[string];   // 按顺序的参数列表
 }
 
-table Node {
-  text_id   :uint32;
-  character :uint8;    // Character 枚举
-  flags     :uint8;    // bit0=isEnd, bit1=hasOptions
-  next_idx  :int32;    // 下一句节点索引
-  options   :[Option];
+// 一个 Block（Fungus 的 Block）
+table DialogueBlock {
+  block_name:string;
+  commands:[Command];
 }
 
-table DialogBlob {
-  nodes:[Node];
-  strings:[string];    // 字符串池
+// 一个 Flowchart（Fungus 的 Flowchart）
+table DialogueFlowchart {
+  chart_name:string;
+  blocks:[DialogueBlock];
 }

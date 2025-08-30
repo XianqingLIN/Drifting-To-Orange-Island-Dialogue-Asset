@@ -1,76 +1,104 @@
-import flatbuffers
-from Dialog import DialogBlob, Node, Option
+import os, re, json, flatbuffers
+from DialoguePy import DialogueFlowchart, DialogueBlock, Command
 
-# ------------------------------------------------
-def _push_str(builder, str_pool, s: str) -> int:
-    if s not in str_pool:
-        str_pool.append(s)
-    return str_pool.index(s)
+# ---------------- 解析 DSL ----------------
+DSL_REGEX = {
+    "Say":  re.compile(r'^Say\s+"(.*?)"(?:\s*\[角色:(.*?)\])?$'),
+    "If":   re.compile(r'^If\s+(.+?)$'),
+    "EndIf":re.compile(r'^EndIf$'),
+    # 可按需继续扩展 Menu / SetVariable / Call 等
+}
 
-def _build_option(builder, str_pool, opt):
-    text_id = _push_str(builder, str_pool, opt["textKey"])
-    cond_blob = builder.CreateByteVector(opt.get("condition", "").encode("utf-8"))
-    evt_blob  = builder.CreateByteVector(opt.get("event", "").encode("utf-8"))
-    Option.Start(builder)
-    Option.AddTextId(builder, text_id)
-    Option.AddTargetIdx(builder, opt.get("target_idx", -1))
-    Option.AddCondLen(builder, len(opt.get("condition", "")))
-    Option.AddCondBlob(builder, cond_blob)
-    Option.AddEvtLen(builder, len(opt.get("event", "")))
-    Option.AddEvtBlob(builder, evt_blob)
-    return Option.End(builder)
+def parse_dsl(content: str):
+    """
+    把多行 DSL 转成 [{'type':'Say','params':[...]}, ...]
+    """
+    commands = []
+    for raw in content.splitlines():
+        line = raw.strip()
+        if not line:
+            continue
+        for cmd_type, pattern in DSL_REGEX.items():
+            m = pattern.match(line)
+            if m:
+                params = list(m.groups())
+                commands.append({"type": cmd_type, "params": params})
+                break
+    return commands
 
-def _build_node(builder, str_pool, node):
-    text_id = _push_str(builder, str_pool, node["textKey"])
-    opts = [_build_option(builder, str_pool, o) for o in node.get("options", [])]
-    Node.StartOptionsVector(builder, len(opts))
-    for o in reversed(opts):
+# ---------------- FlatBuffers 构建 ----------------
+def _create_str_vector(builder, str_list):
+    """一次性把字符串池写进 FlatBuffers"""
+    offsets = [builder.CreateString(s) for s in str_list]
+    DialogueFlowchart.StartParamsVector(builder, len(offsets))
+    for o in reversed(offsets):
         builder.PrependUOffsetTRelative(o)
-    opts_vec = builder.EndVector()
-    Node.Start(builder)
-    Node.AddTextId(builder, text_id)
-    Node.AddCharacter(builder, node.get("characterKey", 0))
-    Node.AddFlags(builder, node.get("flags", 0))
-    Node.AddNextIdx(builder, node.get("next_idx", -1))
-    Node.AddOptions(builder, opts_vec)
-    return Node.End(builder)
+    return builder.EndVector()
 
-# ------------------------------------------------
 def convert_table_to_bytes(records: list, out_path: str):
     """
-    records: 飞书接口返回的 items 数组
-    out_path: 生成的 .bytes 文件路径
+    records: 飞书返回的 items
+    out_path: 输出的 *.bytes
     """
-    # 把飞书行数据转成我们需要的 dict 格式（根据你真实字段名调整）
-    data = []
-    for row in records:
-        fields = row.get("fields", {})
-        data.append({
-            "textKey"     : fields.get("textKey", ""),
-            "characterKey": int(fields.get("characterKey", 0)),
-            "flags"       : int(fields.get("flags", 0)),
-            "next_idx"    : int(fields.get("next_idx", -1)),
-            "options"     : fields.get("options", [])
-        })
+    # 1. 把飞书记录变成 {BlockName: [Command, ...]}
+    blocks_data = {}
+    for rec in records:
+        fields = rec.get("fields", {})
+        block_name = fields.get("BlockName", "Unnamed")
+        content    = fields.get("Content", "")
+        blocks_data[block_name] = parse_dsl(content)
+
+    # 2. 收集所有字符串做池
+    str_pool = []
+    def push(s):
+        if s not in str_pool:
+            str_pool.append(s)
+        return str_pool.index(s)
 
     builder = flatbuffers.Builder(1024)
-    str_pool = []
-    nodes = [_build_node(builder, str_pool, n) for n in data]
-    Node.StartNodesVector(builder, len(nodes))
-    for n in reversed(nodes):
-        builder.PrependUOffsetTRelative(n)
-    nodes_vec = builder.EndVector()
 
-    strings = [builder.CreateString(s) for s in str_pool]
-    DialogBlob.StartStringsVector(builder, len(strings))
-    for s in reversed(strings):
-        builder.PrependUOffsetTRelative(s)
-    strings_vec = builder.EndVector()
+    # 3. 构建 Command 列表
+    cmd_offsets = []
+    for params in str_pool:   # 先预创建字符串
+        [builder.CreateString(s) for s in str_pool]
 
-    DialogBlob.Start(builder)
-    DialogBlob.AddNodes(builder, nodes_vec)
-    DialogBlob.AddStrings(builder, strings_vec)
-    root = DialogBlob.End(builder)
+    block_offsets = []
+    for block_name, cmds in blocks_data.items():
+        cmd_objs = []
+        for cmd in cmds:
+            type_off  = builder.CreateString(cmd["type"])
+            param_offs = [builder.CreateString(p or "") for p in cmd["params"]]
+            Command.StartParamsVector(builder, len(param_offs))
+            for po in reversed(param_offs):
+                builder.PrependUOffsetTRelative(po)
+            params_vec = builder.EndVector()
+
+            Command.Start(builder)
+            Command.AddCommandType(builder, type_off)
+            Command.AddParams(builder, params_vec)
+            cmd_objs.append(Command.End(builder))
+
+        DialogueBlock.StartCommandsVector(builder, len(cmd_objs))
+        for co in reversed(cmd_objs):
+            builder.PrependUOffsetTRelative(co)
+        cmds_vec = builder.EndVector()
+
+        name_off = builder.CreateString(block_name)
+        DialogueBlock.Start(builder)
+        DialogueBlock.AddBlockName(builder, name_off)
+        DialogueBlock.AddCommands(builder, cmds_vec)
+        block_offsets.append(DialogueBlock.End(builder))
+
+    # 4. 构建 Flowchart
+    DialogueFlowchart.StartBlocksVector(builder, len(block_offsets))
+    for bo in reversed(block_offsets):
+        builder.PrependUOffsetTRelative(bo)
+    blocks_vec = builder.EndVector()
+
+    DialogueFlowchart.Start(builder)
+    DialogueFlowchart.AddChartName(builder, builder.CreateString("RuntimeChart"))
+    DialogueFlowchart.AddBlocks(builder, blocks_vec)
+    root = DialogueFlowchart.End(builder)
     builder.Finish(root)
 
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
