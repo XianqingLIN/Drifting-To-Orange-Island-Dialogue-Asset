@@ -1,0 +1,23 @@
+namespace Dialog;
+
+table Option {
+  text_id   :uint32;   // 在字符串池里的索引
+  target_idx:int32;    // 目标节点索引，-1 = 关闭 UI
+  cond_len  :ushort;   // 条件字节码长度
+  cond_blob :[ubyte];  // 条件字节码
+  evt_len   :ushort;
+  evt_blob  :[ubyte];  // 事件字节码
+}
+
+table Node {
+  text_id   :uint32;
+  character :uint8;    // Character 枚举
+  flags     :uint8;    // bit0=isEnd, bit1=hasOptions
+  next_idx  :int32;    // 下一句节点索引
+  options   :[Option];
+}
+
+table DialogBlob {
+  nodes:[Node];
+  strings:[string];    // 字符串池
+}

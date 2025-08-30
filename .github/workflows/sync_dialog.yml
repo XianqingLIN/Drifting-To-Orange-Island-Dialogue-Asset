@@ -35,24 +35,27 @@ jobs:
           pip install flatbuffers
           pip install requests
 
-      # 3. 先把远端最新代码拉下来
+      - name: Install flatc
+        run: |
+          curl -L https://github.com/google/flatbuffers/releases/download/v23.5.26/Linux.flatc.binary.g++-10.zip -o flatc.zip
+          unzip flatc.zip && chmod +x flatc && sudo mv flatc /usr/local/bin/
+
+      - name: Generate flatbuffers Python bindings
+        run: |
+          flatc --python tools/dialog.fbs  # 生成 Dialog/*.py 供 export_dialog.py import
+          # 如果 C# 也要用，可再跑 flatc --csharp dialog.fbs
+
+      # 先把远端最新代码拉下来
       - run: git pull --rebase origin main
 
-      # 4. 拉取飞书数据
-      - name: Pull data from Feishu
+      - name: Pull & convert
         env:
-          FEISHU_APP_ID: ${{ secrets.FEISHU_APP_ID }}
+          FEISHU_APP_ID:     ${{ secrets.FEISHU_APP_ID }}
           FEISHU_APP_SECRET: ${{ secrets.FEISHU_APP_SECRET }}
-          FEISHU_APP_TOKEN: ${{ secrets.FEISHU_APP_TOKEN }}
-          FEISHU_TABLE_ID: ${{ secrets.FEISHU_TABLE_ID }}
+          FEISHU_APP_TOKEN:  ${{ secrets.FEISHU_APP_TOKEN }}
         run: python tools/pull_feishu.py
-        
-      # 5. 转换json数据
-      - name: Export data to Fungus format
-        run: |
-          python tools/export_dialog.py
 
-      # 6. 官方动作：add / commit / push（自动 rebase）
+      # 官方动作：add / commit / push（自动 rebase）
       - name: Commit & push
         uses: EndBug/add-and-commit@v9
         with:
