@@ -17,37 +17,46 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. 拉取仓库（带完整历史，避免冲突）
+      # 1. 拉仓库源码（含脚本）
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
 
-      # 2. 安装 Python 与依赖
+      # 2. 装 Python
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
+      # 3. 装依赖
+      - name: Install deps
         run: |
-          pip install flatbuffers
-          pip install requests
+          pip install requests flatbuffers
 
-      # 先把远端最新代码拉下来
-      - run: git pull --rebase origin main
+      # 4. 装 flatc（官方 Linux 二进制）
+      - name: Install flatc
+        run: |
+          curl -L https://github.com/google/flatbuffers/releases/download/v23.5.26/Linux.flatc.binary.g++-10.zip -o flatc.zip
+          unzip flatc.zip && chmod +x flatc && sudo mv flatc /usr/local/bin/
 
+      # 5. 生成 FlatBuffers Python 绑定
+      - name: Generate Python bindings
+        run: |
+          flatc --python dialogue.fbs
+
+      # 6. 拉飞书表 → 生成 .bytes
       - name: Pull & convert
         env:
           FEISHU_APP_ID:     ${{ secrets.FEISHU_APP_ID }}
           FEISHU_APP_SECRET: ${{ secrets.FEISHU_APP_SECRET }}
           FEISHU_APP_TOKEN:  ${{ secrets.FEISHU_APP_TOKEN }}
-        run: python tools/pull_feishu.py
+        run: |
+          python scripts/pull_feishu.py
 
-      # 官方动作：add / commit / push（自动 rebase）
+      # 7. 把最新 .bytes 提交回仓库
       - name: Commit & push
         uses: EndBug/add-and-commit@v9
         with:
-          add: 'feishu_tables/*'
-          message: 'Auto sync all tables & views'
+          add: 'feishu_tables/**/*.bytes'
+          message: 'chore: auto-sync Feishu → .bytes'
+          author_name: 'github-actions[bot]'
+          author_email: 'github-actions[bot]@users.noreply.github.com'
