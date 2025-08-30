@@ -5,7 +5,7 @@
 import os
 import re
 import flatbuffers
-from DialoguePy import DialogueFlowchart, DialogueBlock, Command
+import DialoguePy
 
 # ---------------- DSL 解析 ----------------
 DSL_REGEX = {
