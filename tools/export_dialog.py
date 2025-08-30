@@ -35,71 +35,72 @@ def convert_table_to_bytes(records: list, out_path: str):
     records: 飞书返回的 items
     out_path: 输出的 *.bytes
     """
-    # 1. 收集 Block → Commands
-    blocks = {}
+    # 1. 飞书 → {BlockName: [Command, ...]}
+    blocks_data = {}
     for rec in records:
         fields = rec.get("fields", {})
         block_name = fields.get("BlockName", "Unnamed")
-        content    = fields.get("Content", "")
-        blocks[block_name] = parse_dsl(content)
+        content = fields.get("Content", "")
+        blocks_data[block_name] = parse_dsl(content)
 
-    # 2. 字符串池
-    str_pool = []
-    def push(s):
-        if s not in str_pool:
-            str_pool.append(s)
-        return builder.CreateString(s)
-
-    builder = flatbuffers.Builder(1024)
-
-    # 3. 构建 Command
-    cmd_offsets = []
-    for block_name, cmds in blocks.items():
+    # 2. 收集所有字符串并一次性创建 offset
+    str_pool = set()
+    str_pool.add("RuntimeChart")
+    for block_name, cmds in blocks_data.items():
+        str_pool.add(block_name)
         for cmd in cmds:
-            type_off = push(cmd["type"])
-            param_offs = [push(p) for p in cmd["params"]]
+            str_pool.add(cmd["type"])
+            str_pool.update(cmd["params"])
+    builder = flatbuffers.Builder(1024)
+    str_offsets = {s: builder.CreateString(s) for s in str_pool}
 
-            CommandStartParametersVector(builder, len(param_offs))
-            for po in reversed(param_offs):
-                builder.PrependUOffsetTRelative(po)
+    # 3. Command 对象
+    cmd_offsets = []
+    for cmds in blocks_data.values():
+        for cmd in cmds:
+            params = cmd["params"]
+            CommandStartParametersVector(builder, len(params))
+            for p in reversed(params):
+                builder.PrependUOffsetTRelative(str_offsets[p])
             params_vec = builder.EndVector()
 
             CommandStart(builder)
-            CommandAddCommandType(builder, type_off)
+            CommandAddCommandType(builder, str_offsets[cmd["type"]])
             CommandAddParameters(builder, params_vec)
             cmd_offsets.append(CommandEnd(builder))
 
-    # 4. 构建 DialogueBlock
+    # 4. DialogueBlock 对象
     block_offsets = []
-    for block_name, cmds in blocks.items():
-        cmds_in_block = len(cmds)
-        DialogueBlockStartCommandsVector(builder, cmds_in_block)
-        for co in reversed(cmd_offsets[-cmds_in_block:]):
-            builder.PrependUOffsetTRelative(co)
+    cmd_idx = 0
+    for block_name, cmds in blocks_data.items():
+        n_cmds = len(cmds)
+        DialogueBlockStartCommandsVector(builder, n_cmds)
+        for i in range(n_cmds):
+            builder.PrependUOffsetTRelative(cmd_offsets[cmd_idx + n_cmds - 1 - i])
         cmds_vec = builder.EndVector()
+        cmd_idx += n_cmds
 
-        name_off = push(block_name)
         DialogueBlockStart(builder)
-        DialogueBlockAddBlockName(builder, name_off)
+        DialogueBlockAddBlockName(builder, str_offsets[block_name])
         DialogueBlockAddCommands(builder, cmds_vec)
         block_offsets.append(DialogueBlockEnd(builder))
 
-    # 5. 构建 DialogueFlowchart
+    # 5. DialogueFlowchart 对象
     DialogueFlowchartStartBlocksVector(builder, len(block_offsets))
     for bo in reversed(block_offsets):
         builder.PrependUOffsetTRelative(bo)
     blocks_vec = builder.EndVector()
 
     DialogueFlowchartStart(builder)
-    DialogueFlowchartAddChartName(builder, push("RuntimeChart"))
+    DialogueFlowchartAddChartName(builder, str_offsets["RuntimeChart"])
     DialogueFlowchartAddBlocks(builder, blocks_vec)
     root = DialogueFlowchartEnd(builder)
     builder.Finish(root)
 
+    # 6. 写文件
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     with open(out_path, "wb") as f:
         f.write(builder.Output())
-
 # 允许独立运行测试
 if __name__ == "__main__":
     test = [{"fields":{"BlockName":"test_block","Content":'Say "你好" [角色:Player]\nIf HasItem(5)\nSay "有钥匙" [角色:NPC]\nEndIf'}}]
