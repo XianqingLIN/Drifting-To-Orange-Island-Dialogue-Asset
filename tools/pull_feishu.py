@@ -5,6 +5,7 @@ import os
 import json
 import requests
 import tempfile
+import flatbuffers
 from export_dialog import convert_table_to_bytes   # ← 把转换逻辑拆出去
 from DialoguePy import DialogueFlowchart, DialogueBlock, Command
 
