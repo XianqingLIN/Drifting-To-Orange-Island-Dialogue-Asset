@@ -13,24 +13,23 @@ def load_and_parse_bytes(file_path: str):
     """
     加载并解析 .bytes 文件
     """
-    # 读取 .bytes 文件
-    with open(file_path, "rb") as f:
+   with open(file_path, "rb") as f:
         bytes_data = f.read()
 
     # 解析 FlatBuffers 数据
-    chart = DialogueFlowchart.GetRootAsDialogueFlowchart(flatbuffers.Builder().CreateBuffer(bytes_data))
+    chart = DialogueFlowchart.GetRootAsDialogueFlowchart(bytes_data)
 
     # 打印解析后的数据结构
     print(f"Chart Name: {chart.ChartName()}")
     print(f"Number of Blocks: {chart.BlocksLength()}")
 
     for i in range(chart.BlocksLength()):
-        block = chart.Blocks(i).Value
+        block = chart.Blocks(i)
         print(f"  Block Name: {block.BlockName()}")
         print(f"  Number of Commands: {block.CommandsLength()}")
 
         for j in range(block.CommandsLength()):
-            cmd = block.Commands(j).Value
+            cmd = block.Commands(j)
             print(f"    Command Type: {cmd.CommandType()}")
             print(f"    Number of Parameters: {cmd.ParametersLength()}")
 
