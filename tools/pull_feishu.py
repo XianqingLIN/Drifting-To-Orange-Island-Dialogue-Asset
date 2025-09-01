@@ -28,10 +28,6 @@ def load_and_parse_bytes(file_path: str):
         print(f"  Block Name: {block.BlockName()}")
         print(f"  Number of Commands: {block.CommandsLength()}")
 
-        for j in range(block.CommandsLength()):
-            cmd = block.Commands(j)
-            print(f"    Command Type: {cmd.CommandType()}")
-
 APP_ID     = os.getenv("FEISHU_APP_ID")
 APP_SECRET = os.getenv("FEISHU_APP_SECRET")
 APP_TOKEN  = os.getenv("FEISHU_APP_TOKEN")
@@ -75,5 +71,6 @@ for tbl in tables:
     # 直接转 bytes 并写入文件
     bytes_path = os.path.join(out_dir, f"{table_name}.bytes")
     convert_table_to_bytes(records, bytes_path)
-    load_and_parse_bytes(bytes_path)
+ 
+    load_and_parse_bytes(bytes_path) #测试用
     print(f"✅ {bytes_path}")
