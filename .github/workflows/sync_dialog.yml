@@ -47,6 +47,11 @@ jobs:
           cd feishu_tables
           zip -r ../feishu_tables.zip ./*
 
+      # 5.1 生成新的 remote_version.txt (UTC 时间戳)
+      - name: Generate version
+        run: |
+          echo "$(date -u +%Y%m%d%H%M%S)" > remote_version.txt
+          
       # 6. 把最新 .bytes 与 zip 提交回仓库
       - name: Commit & push
         uses: EndBug/add-and-commit@v9
