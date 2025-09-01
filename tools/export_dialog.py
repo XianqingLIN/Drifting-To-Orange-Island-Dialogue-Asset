@@ -9,8 +9,9 @@ from DialoguePy import *
 
 # ---------------- DSL 解析 ----------------
 DSL_REGEX = {
-    "Say":   re.compile(r'^Say\s+"(.*?)"(?:\s*\[角色:(.*?)\])?$'),
-    "If":    re.compile(r'^If\s+(.+?)$'),
+    "Say": re.compile(r'^Say\s+\[Character:(.*?),\s*Text:"(.*?)"\]$'),
+    "Menu": re.compile(r'^Menu\s+\[Text:"(.*?)"(?:,\s*TargetBlock:(.*?))?\]$'),
+    "If": re.compile(r'^If\s+(.+?)$'),
     "EndIf": re.compile(r'^EndIf$'),
 }
 
