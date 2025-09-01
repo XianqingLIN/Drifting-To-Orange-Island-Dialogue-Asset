@@ -13,7 +13,7 @@ def load_and_parse_bytes(file_path: str):
     """
     加载并解析 .bytes 文件
     """
-   with open(file_path, "rb") as f:
+    with open(file_path, "rb") as f:
         bytes_data = f.read()
 
     # 解析 FlatBuffers 数据
