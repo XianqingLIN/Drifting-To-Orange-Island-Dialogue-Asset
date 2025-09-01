@@ -108,6 +108,9 @@ def convert_table_to_bytes(records: list, out_path: str):
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     with open(out_path, "wb") as f:
         f.write(builder.Output())
+        
+    print(f"Generated {out_path} with {len(blocks_data)} blocks and {len(cmd_offsets)} commands.")
+    
 # 允许独立运行测试
 if __name__ == "__main__":
     test = [{"fields":{"BlockName":"test_block","Content":'Say "你好" [角色:Player]\nIf HasItem(5)\nSay "有钥匙" [角色:NPC]\nEndIf'}}]
