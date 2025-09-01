@@ -41,11 +41,19 @@ jobs:
         run: |
           python tools/pull_feishu.py
 
-      # 5. 把最新 .bytes 提交回仓库
+      # 5. 打包成 zip
+      - name: Zip feishu_tables
+        run: |
+          cd feishu_tables
+          zip -r ../feishu_tables.zip ./*
+
+      # 6. 把最新 .bytes 与 zip 提交回仓库
       - name: Commit & push
         uses: EndBug/add-and-commit@v9
         with:
-          add: 'feishu_tables/**/*.bytes'
-          message: 'chore: auto-sync Feishu → .bytes'
+          add: |
+            feishu_tables/**/*.bytes
+            feishu_tables.zip
+          message: 'chore: auto-sync Feishu → .bytes & zip'
           author_name: 'github-actions[bot]'
           author_email: 'github-actions[bot]@users.noreply.github.com'
