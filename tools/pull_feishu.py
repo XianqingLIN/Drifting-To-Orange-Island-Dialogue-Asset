@@ -31,12 +31,7 @@ def load_and_parse_bytes(file_path: str):
         for j in range(block.CommandsLength()):
             cmd = block.Commands(j)
             print(f"    Command Type: {cmd.CommandType()}")
-            print(f"    Number of Parameters: {cmd.ParametersLength()}")
 
-            for k in range(cmd.ParametersLength()):
-                param = cmd.Parameters(k)
-                print(f"      Parameter {k}: {param}")
-             
 APP_ID     = os.getenv("FEISHU_APP_ID")
 APP_SECRET = os.getenv("FEISHU_APP_SECRET")
 APP_TOKEN  = os.getenv("FEISHU_APP_TOKEN")
