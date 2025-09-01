@@ -20,6 +20,8 @@ jobs:
       # 1. 拉仓库源码（含脚本）
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       # 2. 装 Python
       - name: Setup Python
