@@ -9,25 +9,29 @@ from DialoguePy import *
 
 # ---------------- DSL 解析 ----------------
 DSL_REGEX = {
-    "Say":  re.compile(r'^Say\s+\[(.+?)\]$'),
+    "Say": re.compile(r'^Say\s+\[(.+?)\]$'),
     "Menu": re.compile(r'^Menu\s+\[(.+?)\]$'),
     "Call": re.compile(r'^Call\s+\[(.+?)\]$'),
     "If":   re.compile(r'^If\s+(.+?)$'),
-    "EndIf":re.compile(r'^EndIf$'),
+    "EndIf":re.compile(r'^EndIf$')
 }
 
 def parse_dsl(content: str):
-    """返回 [{'type':'Say','params':['character:NPC_AC, storyText:"xxx"']}, ...]"""
     cmds = []
-    for raw in content.splitlines():
-        line = raw.strip()
+    for line in content.splitlines():
+        line = line.strip()
         if not line:
             continue
         for cmd_type, pat in DSL_REGEX.items():
             m = pat.match(line)
             if m:
-                # 整段括号内容作为唯一参数
-                cmds.append({"type": cmd_type, "params": [m.group(1).strip()]})
+                inner = m.group(1)          # 去掉外层 []
+                # 把转义 \" 临时占位，避免被 split 误伤
+                inner_safe = inner.replace('\\"', '__ESC__')
+                kv_list = [p.strip() for p in inner_safe.split(',') if p.strip()]
+                # 恢复真正的双引号
+                kv_list = [p.replace('__ESC__', '"') for p in kv_list]
+                cmds.append({'type': cmd_type, 'params': kv_list})
                 break
     return cmds
 
