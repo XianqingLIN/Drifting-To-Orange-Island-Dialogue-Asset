@@ -11,6 +11,7 @@ from DialoguePy import *
 DSL_REGEX = {
     "Say": re.compile(r'^Say\s+\[Character:(.*?),\s*Text:"(.*?)"\]$'),
     "Menu": re.compile(r'^Menu\s+\[Text:"(.*?)"(?:,\s*TargetBlock:(.*?))?\]$'),
+    "Call": re.compile(r'^Call\s+\[TargetFlowchart:\s*(.*?),\s*TargetBlock:\s*(.*?)\]$'),
     "If": re.compile(r'^If\s+(.+?)$'),
     "EndIf": re.compile(r'^EndIf$'),
 }
