@@ -9,15 +9,15 @@ from DialoguePy import *
 
 # ---------------- DSL 解析 ----------------
 DSL_REGEX = {
-    "Say": re.compile(r'^Say\s+\[Character:(.*?),\s*Text:"(.*?)"\]$'),
-    "Menu": re.compile(r'^Menu\s+\[Text:"(.*?)"(?:,\s*TargetBlock:(.*?))?\]$'),
-    "Call": re.compile(r'^Call\s+\[TargetFlowchart:\s*(.*?),\s*TargetBlock:\s*(.*?)\]$'),
-    "If": re.compile(r'^If\s+(.+?)$'),
-    "EndIf": re.compile(r'^EndIf$'),
+    "Say":  re.compile(r'^Say\s+\[(.+?)\]$'),
+    "Menu": re.compile(r'^Menu\s+\[(.+?)\]$'),
+    "Call": re.compile(r'^Call\s+\[(.+?)\]$'),
+    "If":   re.compile(r'^If\s+(.+?)$'),
+    "EndIf":re.compile(r'^EndIf$'),
 }
 
 def parse_dsl(content: str):
-    """把多行 DSL 转成 [{'type':'Say','params':[...]}, ...]"""
+    """返回 [{'type':'Say','params':['character:NPC_AC, storyText:"xxx"']}, ...]"""
     cmds = []
     for raw in content.splitlines():
         line = raw.strip()
@@ -26,8 +26,8 @@ def parse_dsl(content: str):
         for cmd_type, pat in DSL_REGEX.items():
             m = pat.match(line)
             if m:
-                params = [p or "" for p in m.groups()]
-                cmds.append({"type": cmd_type, "params": params})
+                # 整段括号内容作为唯一参数
+                cmds.append({"type": cmd_type, "params": [m.group(1).strip()]})
                 break
     return cmds
 
