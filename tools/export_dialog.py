@@ -24,15 +24,17 @@ def parse_dsl(content: str):
             continue
         for cmd_type, pat in DSL_REGEX.items():
             m = pat.match(line)
-            if m:
-                inner = m.group(1)          # 去掉外层 []
-                # 把转义 \" 临时占位，避免被 split 误伤
+            if not m:
+                continue
+            if cmd_type == "Else":
+                cmds.append({'type': 'Else', 'params': []})  # ← 无参数
+            else:
+                inner = m.group(1)
                 inner_safe = inner.replace('\\"', '__ESC__')
                 kv_list = [p.strip() for p in inner_safe.split(',') if p.strip()]
-                # 恢复真正的双引号
                 kv_list = [p.replace('__ESC__', '"') for p in kv_list]
                 cmds.append({'type': cmd_type, 'params': kv_list})
-                break
+            break
     return cmds
 
 # ---------------- FlatBuffers 构建 ----------------
