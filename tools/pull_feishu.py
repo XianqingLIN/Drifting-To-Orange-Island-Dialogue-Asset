@@ -33,6 +33,21 @@ APP_SECRET = os.getenv("FEISHU_APP_SECRET")
 APP_TOKEN  = os.getenv("FEISHU_APP_TOKEN")
 BASE_DIR   = "feishu_tables"
 
+def list_all_tables(app_token: str):
+    url = f"https://open.feishu.cn/open-apis/bitable/v1/apps/{app_token}/tables"
+    tables, page_token = [], ""
+    while True:
+        params = {"page_size": 100}
+        if page_token:
+            params["page_token"] = page_token
+        rsp = requests.get(url, headers=headers, params=params).json()
+        data = rsp["data"]
+        tables.extend(data["items"])
+        page_token = data.get("page_token")
+        if not page_token:          # 空表示最后一页
+            break
+    return tables
+
 # ------------------------------------------------------------------
 # 1. 拿 token
 token = requests.post(
@@ -43,11 +58,13 @@ headers = {"Authorization": f"Bearer {token}"}
 
 # ------------------------------------------------------------------
 # 2. 枚举所有表
-tables = requests.get(
-    f"https://open.feishu.cn/open-apis/bitable/v1/apps/{APP_TOKEN}/tables",
-    headers=headers
-).json()["data"]["items"]
+# tables = requests.get(
+#     f"https://open.feishu.cn/open-apis/bitable/v1/apps/{APP_TOKEN}/tables",
+#     headers=headers
+# ).json()["data"]["items"]
 
+all_tables = list_all_tables(APP_TOKEN)
+print("共拉取表数:", len(all_tables))
 os.makedirs(BASE_DIR, exist_ok=True)
 
 # ------------------------------------------------------------------
@@ -55,7 +72,7 @@ os.makedirs(BASE_DIR, exist_ok=True)
 for tbl in tables:
     table_id   = tbl["table_id"]
     table_name = tbl["name"]
-    print("1\n")
+ 
     # 前缀 → 目录
     prefix = table_name.split("_", 1)[0] if "_" in table_name else "uncategorized"
     out_dir = os.path.join(BASE_DIR, prefix)
