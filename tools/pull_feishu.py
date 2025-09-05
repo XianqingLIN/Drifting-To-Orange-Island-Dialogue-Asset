@@ -49,7 +49,7 @@ tables = requests.get(
 ).json()["data"]["items"]
 
 os.makedirs(BASE_DIR, exist_ok=True)
-
+print(f"{length(tables)}")
 # ------------------------------------------------------------------
 # 3. 逐表处理
 for tbl in tables:
