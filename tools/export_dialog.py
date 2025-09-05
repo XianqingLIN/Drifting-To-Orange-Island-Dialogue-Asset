@@ -12,8 +12,8 @@ DSL_REGEX = {
     "Say": re.compile(r'^Say\s+\[(.+?)\]$'),
     "Menu": re.compile(r'^Menu\s+\[(.+?)\]$'),
     "Call": re.compile(r'^Call\s+\[(.+?)\]$'),
-    "If":   re.compile(r'^If\s+(.+?)$'),
-    "EndIf":re.compile(r'^EndIf$')
+    "If": re.compile(r'^If\s+\[(.+?)\]$'),
+    "Else": re.compile(r'^Else$')
 }
 
 def parse_dsl(content: str):
