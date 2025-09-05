@@ -28,11 +28,6 @@ def load_and_parse_bytes(file_path: str):
         print(f"  Block Name: {block.BlockName()}")
         print(f"  Number of Commands: {block.CommandsLength()}")
 
-APP_ID     = os.getenv("FEISHU_APP_ID")
-APP_SECRET = os.getenv("FEISHU_APP_SECRET")
-APP_TOKEN  = os.getenv("FEISHU_APP_TOKEN")
-BASE_DIR   = "feishu_tables"
-
 def list_all_tables(app_token: str):
     url = f"https://open.feishu.cn/open-apis/bitable/v1/apps/{app_token}/tables"
     tables, page_token = [], ""
@@ -40,13 +35,18 @@ def list_all_tables(app_token: str):
         params = {"page_size": 100}
         if page_token:
             params["page_token"] = page_token
-        rsp = requests.get(url, headers=headers, params=params).json()
+        rsp = requests.get(url, headers=headers).json()
         data = rsp["data"]
         tables.extend(data["items"])
         page_token = data.get("page_token")
         if not page_token:          # 空表示最后一页
             break
     return tables
+
+APP_ID     = os.getenv("FEISHU_APP_ID")
+APP_SECRET = os.getenv("FEISHU_APP_SECRET")
+APP_TOKEN  = os.getenv("FEISHU_APP_TOKEN")
+BASE_DIR   = "feishu_tables"
 
 # ------------------------------------------------------------------
 # 1. 拿 token
