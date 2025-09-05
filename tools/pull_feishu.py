@@ -49,13 +49,13 @@ tables = requests.get(
 ).json()["data"]["items"]
 
 os.makedirs(BASE_DIR, exist_ok=True)
-print(f"{length(tables)}")
+
 # ------------------------------------------------------------------
 # 3. 逐表处理
 for tbl in tables:
     table_id   = tbl["table_id"]
     table_name = tbl["name"]
-
+    print("1\n")
     # 前缀 → 目录
     prefix = table_name.split("_", 1)[0] if "_" in table_name else "uncategorized"
     out_dir = os.path.join(BASE_DIR, prefix)
