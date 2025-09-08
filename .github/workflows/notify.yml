@@ -1,0 +1,49 @@
+on:
+  workflow_run:      # 由主 workflow 完成后触发
+    workflows: ["update-dialog"]
+    types: [completed]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: pick outcome
+        id: meta
+        run: |
+          echo "status=${{ github.event.workflow_run.conclusion }}" >> $GITHUB_OUTPUT
+          echo "actor=${{ github.event.workflow_run.triggering_actor.login }}" >> $GITHUB_OUTPUT
+          echo "run_url=${{ github.event.workflow_run.html_url }}" >> $GITHUB_OUTPUT
+
+      - name: send feishu card
+        run: |
+          TOKEN=$(curl -s -X POST https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal \
+            -H "Content-Type: application/json" \
+            -d '{"app_id":"'${{ secrets.FEISHU_APP_ID }}'","app_secret":"'${{ secrets.FEISHU_APP_SECRET }}'"}' \
+            | jq -r .tenant_access_token)
+
+          if [ "${{ steps.meta.outputs.status }}" == "success" ]; then
+            COLOR="green"
+            TITLE="✅ 对话更新成功"
+          else
+            COLOR="red"
+            TITLE="❌ 对话更新失败"
+          fi
+
+          curl -X POST https://open.feishu.cn/open-apis/message/v4/send/ \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{
+                  "chat_id": "${{ secrets.FEISHU_CHAT_ID }}",
+                  "msg_type": "post",
+                  "content": {
+                    "post": {
+                      "zh_cn": {
+                        "title": "'"$TITLE"'",
+                        "content": [
+                          [{"tag": "text","text": "@${{ steps.meta.outputs.actor }} \n"},
+                           {"tag": "a","text": "查看日志","href": "${{ steps.meta.outputs.run_url }}"}]
+                        ]
+                      }
+                    }
+                  }
+                }'
