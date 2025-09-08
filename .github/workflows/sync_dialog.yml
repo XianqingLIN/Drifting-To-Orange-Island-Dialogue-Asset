@@ -65,3 +65,11 @@ jobs:
           message: 'chore: auto-sync Feishu → .bytes & zip'
           author_name: 'github-actions[bot]'
           author_email: 'github-actions[bot]@users.noreply.github.com'
+
+      #7. 通知结果
+      - name: mark finished
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: done
+          path: .github/workflows/notify.yml
