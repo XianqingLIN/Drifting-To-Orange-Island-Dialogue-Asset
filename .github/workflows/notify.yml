@@ -1,3 +1,4 @@
+name: notify-feishu
 on:
   workflow_run:      # 由主 workflow 完成后触发
     workflows: ["update-dialog"]
