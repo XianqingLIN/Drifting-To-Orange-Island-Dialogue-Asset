@@ -69,7 +69,7 @@ jobs:
       #7. 通知结果
       - name: mark finished
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: done
           path: .github/workflows/notify.yml
