@@ -65,4 +65,19 @@ jobs:
           message: 'chore: auto-sync Feishu → .bytes & zip'
           author_name: 'github-actions[bot]'
           author_email: 'github-actions[bot]@users.noreply.github.com'
+          
+      # 7. 安装 ssh-client 并写入私钥
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SERVER_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p ${{ secrets.SERVER_PORT }} ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      # 8. 上传 zip + version.txt 到服务器目录
+      - name: Upload to server
+        run: |
+          rsync -avz -e "ssh -p ${{ secrets.SERVER_PORT }} -i ~/.ssh/id_ed25519" \
+            feishu_tables.zip remote_version.txt \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/var/www/static/feishu/
 
