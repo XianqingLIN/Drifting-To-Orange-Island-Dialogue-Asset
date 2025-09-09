@@ -79,5 +79,5 @@ jobs:
         run: |
           rsync -avz -e "ssh -p ${{ secrets.SERVER_PORT }} -i ~/.ssh/id_ed25519" \
             feishu_tables.zip remote_version.txt \
-            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/var/www/static/feishu/
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/DTOL/DTOL-Data/DialogueData
 
