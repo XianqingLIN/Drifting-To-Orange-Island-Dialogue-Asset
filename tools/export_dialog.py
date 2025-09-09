@@ -52,10 +52,10 @@ def convert_table_to_bytes(records: list, out_path: str):
         blocks_data[block_name] = parse_dsl(content)
 
     # 打印每个块的命令数量
-    for block_name, cmds in blocks_data.items():
-        print(f"Block '{block_name}' has {len(cmds)} commands.")
-        for cmd in cmds:
-            print(f"  Command: {cmd['type']} with params: {cmd['params']}")
+    # for block_name, cmds in blocks_data.items():
+    #     print(f"Block '{block_name}' has {len(cmds)} commands.")
+    #     for cmd in cmds:
+    #         print(f"  Command: {cmd['type']} with params: {cmd['params']}")
             
     # 2. 收集所有字符串并一次性创建 offset
     str_pool = set()
