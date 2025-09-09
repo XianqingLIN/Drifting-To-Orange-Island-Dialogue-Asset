@@ -67,18 +67,12 @@ jobs:
           author_email: 'github-actions[bot]@users.noreply.github.com'
           
       # 7. 安装 ssh-client 并写入私钥
-      - name: Setup SSH debug
+      - name: Setup SSH
         run: |
-          set -x                      # 打印每条命令
           mkdir -p ~/.ssh
-          # 用 cat 显示前 5 行，看有没有 BOM 或多余空格
-          printf '%s\n' "${{ secrets.SERVER_KEY }}" | cat -A | head -5
           printf '%s\n' "${{ secrets.SERVER_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          # 再次验证私钥能否被读取
-          ssh-keygen -y -f ~/.ssh/id_ed25519 || true
-          # 再看文件实际十六进制头 32 字节
-          xxd -l 32 ~/.ssh/id_ed25519
+          ssh-keyscan -p ${{ secrets.SERVER_PORT }} ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
 
       # 8. 上传 zip + version.txt 到服务器目录
       - name: Upload to server
