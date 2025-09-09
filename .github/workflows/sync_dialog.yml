@@ -8,10 +8,6 @@ on:
   # 手动触发
   workflow_dispatch:
 
-  # 飞书 Webhook 触发（repository_dispatch）
-  repository_dispatch:
-    types: [feishu_update]
-
 jobs:
   sync:
     runs-on: ubuntu-latest
