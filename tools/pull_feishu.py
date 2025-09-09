@@ -69,9 +69,9 @@ for tbl in tables:
         print(f"⚠️  skip {table_name}: {records_resp}")
         continue
     records = records_resp["data"]["items"]
-    print(records)
+    
     # 4. 拼表级 revision 指纹 = 所有记录 revision 排序后哈希
-    rev_list = sorted(r["revision"] for r in records)
+    rev_list = sorted(r["revision_id"] for r in records)
     fingerprint = hashlib.sha256("\n".join(rev_list).encode()).hexdigest()
 
     # 5. 与本地缓存比对
