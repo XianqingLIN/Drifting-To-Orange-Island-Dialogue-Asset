@@ -13,6 +13,10 @@ APP_ID     = os.getenv("FEISHU_APP_ID")
 APP_SECRET = os.getenv("FEISHU_APP_SECRET")
 APP_TOKEN  = os.getenv("FEISHU_APP_TOKEN")
 BASE_DIR   = "feishu_tables"
+REV_DIR    = "feishu_tables/.revision"          # 缓存目录
+
+os.makedirs(BASE_DIR, exist_ok=True)
+os.makedirs(REV_DIR, exist_ok=True)
 
 def table_hash(records):
     """对 records 按固定顺序算哈希"""
@@ -24,50 +28,65 @@ def table_hash(records):
     return hashlib.sha256(json.dumps(core, sort_keys=True).encode()).hexdigest()
  
 # ------------------------------------------------------------------
-# 1. 拿 token
-token = requests.post(
+# 1. 拿 tenant_access_token
+token_resp = requests.post(
     "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal",
     json={"app_id": APP_ID, "app_secret": APP_SECRET}
-).json()["tenant_access_token"]
+).json()
+if token_resp.get("code") != 0:
+    raise RuntimeError(f"get token fail: {token_resp}")
+token = token_resp["tenant_access_token"]
 headers = {"Authorization": f"Bearer {token}"}
 
 # ------------------------------------------------------------------
 # 2. 枚举所有表
-tables = requests.get(
+tables_resp = requests.get(
     f"https://open.feishu.cn/open-apis/bitable/v1/apps/{APP_TOKEN}/tables",
     headers=headers
-).json()["data"]["items"]
-
-os.makedirs(BASE_DIR, exist_ok=True)
+).json()
+if tables_resp.get("code") != 0:
+    raise RuntimeError(f"list tables fail: {tables_resp}")
+tables = tables_resp["data"]["items"]
 
 # ------------------------------------------------------------------
 # 3. 逐表处理
 for tbl in tables:
     table_id   = tbl["table_id"]
     table_name = tbl["name"]
-    prefix     = table_name.split("_", 1)[0] if "_" in table_name else "uncategorized"
-    out_dir    = os.path.join(BASE_DIR, prefix)
+
+    # 前缀分目录
+    prefix  = table_name.split("_", 1)[0] if "_" in table_name else "uncategorized"
+    out_dir = os.path.join(BASE_DIR, prefix)
     os.makedirs(out_dir, exist_ok=True)
 
     # 拉全量记录
-    records = requests.get(
+    records_resp = requests.get(
         f"https://open.feishu.cn/open-apis/bitable/v1/apps/{APP_TOKEN}/tables/{table_id}/records",
         headers=headers,
         params={"page_size": 500}
-    ).json()["data"]["items"]
+    ).json()
+    if records_resp.get("code") != 0:
+        print(f"⚠️  skip {table_name}: {records_resp}")
+        continue
+    records = records_resp["data"]["items"]
 
-    # 计算哈希
-    new_hash = table_hash(records)
-    hash_path = os.path.join(out_dir, f".{table_name}.hash")
-    old_hash  = open(hash_path).read().strip() if os.path.exists(hash_path) else ""
+    # 4. 拼表级 revision 指纹 = 所有记录 revision 排序后哈希
+    rev_list = sorted(r["revision"] for r in records)
+    fingerprint = hashlib.sha256("\n".join(rev_list).encode()).hexdigest()
 
-    if new_hash == old_hash:
+    # 5. 与本地缓存比对
+    rev_file = os.path.join(REV_DIR, f"{table_name}.rev")
+    old_fp   = open(rev_file).read().strip() if os.path.exists(rev_file) else ""
+
+    if fingerprint == old_fp:
         print(f"⏭  {table_name} 无变更")
         continue
 
-    # 有变更
+    # 6. 有变化 → 生成 .bytes + 更新缓存
     bytes_path = os.path.join(out_dir, f"{table_name}.bytes")
     convert_table_to_bytes(records, bytes_path)
-    with open(hash_path, "w") as f:
-        f.write(new_hash)
-    print(f"✅ {bytes_path} 已更新")
+    with open(rev_file, "w") as f:
+        f.write(fingerprint)
+    print(f"✅ {bytes_path} 已更新 / revision={fingerprint[:8]}")
+
+print("全部表处理完成")
