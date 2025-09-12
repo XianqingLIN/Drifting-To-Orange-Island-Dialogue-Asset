@@ -1,12 +1,6 @@
 name: Sync Feishu Table to GitHub
 
 on:
-  # 每天凌晨 3 点自动跑一次（可选）
-  schedule:
-    - cron: '0 3 * * *'
-
-  # 手动触发
-  workflow_dispatch:
 
 jobs:
   sync:
